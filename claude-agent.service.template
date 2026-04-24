@@ -1,0 +1,15 @@
+[Unit]
+Description=Claude Code (Remote Control, __SESSION_NAME__ session)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=__CLAUDE_BIN__ remote-control --name __SESSION_NAME__ --permission-mode bypassPermissions
+WorkingDirectory=__HOME__
+Restart=on-failure
+RestartSec=5
+Environment=PATH=__HOME__/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+[Install]
+WantedBy=default.target
