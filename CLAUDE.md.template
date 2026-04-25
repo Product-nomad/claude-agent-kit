@@ -1,0 +1,42 @@
+# Host: claude-agent-kit-installed VPS
+
+This box runs Claude Code as a long-running remote-control agent. The rules
+below are **hard rules** — breaking them can leave the box unreachable
+except via the provider's web/serial console.
+
+## Never delete, move, or rewrite
+
+- `~/.ssh/**` — `authorized_keys`, host keys, agent keys. Deleting any of
+  these locks the user out of SSH.
+- `/usr/local/bin/claude*`, `/usr/bin/claude*`, `~/.local/bin/claude*` —
+  the CLI binary.
+- `~/.claude/auth.json`, `~/.claude/settings.json`, `~/.claude/keychain*`
+  — credentials and settings the agent needs to start. Files under
+  `~/.claude/projects/` (session logs) are fine to clean up.
+- `/etc/systemd/system/claude-agent.service`,
+  `~/.config/systemd/user/claude-agent.service` — the unit that keeps
+  this agent alive.
+- `/etc/sudoers`, `/etc/sudoers.d/**`, `/etc/passwd`, `/etc/shadow` —
+  obvious, but worth saying.
+
+## Cleanup operations
+
+When asked to "clean up" / "tidy" / "free disk space":
+
+1. Show a dry-run first (`du -sh ~/.cache /var/log /tmp` etc.) and list
+   exact paths you propose to remove.
+2. Get explicit confirmation before deleting anything outside the
+   well-known ephemeral caches (`~/.cache/`, `/tmp/`, `/var/tmp/`,
+   `~/.npm/_cacache/`, package-manager caches).
+3. Never run `rm -rf` against a path whose full contents you have not
+   listed in the same turn.
+4. If any path matches the "Never delete" list above — refuse, explain
+   why, and propose a safe alternative.
+
+## Why this file exists
+
+A previous box was bricked on 2026-04-24 by a "tidy up" command that
+deleted `~/.ssh/` and the claude binary, severing both SSH and the
+remote-control channel. Recovery required provider console access. This
+file is the runtime guard against repeating that. Edit freely — but if
+you weaken the rules above, do it on purpose.

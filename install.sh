@@ -11,6 +11,10 @@
 #      mode). Systemd can't answer prompts; you answer once, consent is saved.
 #   5. Writes the unit with the correct subcommand form (`claude
 #      remote-control --name X`), not the old --remote-control flag form.
+#   6. Drops a runtime safety CLAUDE.md at $HOME on first run. Hard rules
+#      against deleting ~/.ssh, the claude binary, or the systemd unit —
+#      see CLAUDE.md.template. Skipped if a file already exists at
+#      $HOME/CLAUDE.md (your edits are preserved).
 #
 # Idempotent. Safe to rerun.
 
@@ -36,6 +40,14 @@ EOF
 fi
 
 SESSION_NAME="${CLAUDE_SESSION_NAME:-$(hostname -s)}"
+# Validate at the boundary: this value is sed-substituted into a systemd
+# unit file. Allow only chars that are unambiguous in unit-file syntax.
+if [[ ! "$SESSION_NAME" =~ ^[A-Za-z0-9_.-]{1,64}$ ]]; then
+  echo "✖ SESSION_NAME '$SESSION_NAME' is invalid." >&2
+  echo "  Allowed: letters, digits, underscore, dot, hyphen (1–64 chars)." >&2
+  echo "  Override with CLAUDE_SESSION_NAME=<safe-name>." >&2
+  exit 1
+fi
 SERVICE_NAME="claude-agent"
 UNIT_DIR="$HOME/.config/systemd/user"
 UNIT_FILE="$UNIT_DIR/${SERVICE_NAME}.service"
@@ -120,6 +132,21 @@ sed \
   -e "s|__HOME__|$HOME|g" \
   "$TEMPLATE" > "$UNIT_FILE"
 echo "✓ Wrote $UNIT_FILE"
+
+# ── 6b. Install the runtime safety CLAUDE.md ─────────────────────────────
+# Hard rules denying destructive ops on ~/.ssh, the claude binary, and the
+# systemd unit. The agent reads $HOME/CLAUDE.md on every session start.
+# Prevents the "tidy up bricked my VPS" failure mode (see DECISIONS.md).
+TEMPLATE_CLAUDE_MD="$(dirname "$(readlink -f "$0")")/CLAUDE.md.template"
+HOME_CLAUDE_MD="$HOME/CLAUDE.md"
+if [[ -e "$HOME_CLAUDE_MD" ]]; then
+  echo "✓ $HOME_CLAUDE_MD already exists — leaving it alone."
+  echo "  Verify it contains the destructive-action guards from"
+  echo "  $TEMPLATE_CLAUDE_MD, or merge them in."
+else
+  cp "$TEMPLATE_CLAUDE_MD" "$HOME_CLAUDE_MD"
+  echo "✓ Installed runtime safety CLAUDE.md at $HOME_CLAUDE_MD"
+fi
 
 # ── 7. Reload, enable, restart ───────────────────────────────────────────
 systemctl --user daemon-reload

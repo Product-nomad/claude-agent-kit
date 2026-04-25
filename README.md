@@ -4,6 +4,13 @@ Install Claude Code as a **systemd user service** on a Linux VPS. Survives SSH l
 
 Tested against Claude Code **2.1.119+** (subcommand-style CLI). Handles every gotcha we hit deploying this in production — see the comments in `install.sh` for the full reasoning.
 
+> **CPMAI phase:** IV — Model Development. The install path is implemented and tested manually on Ubuntu 22.04 + 24.04 VPSes. Phase V gates (automated test suite, golden-set bootstrap test) are outstanding; tracked in `STATE.md`.
+
+**Read these before installing on a real box:**
+- [`THREAT_MODEL.md`](THREAT_MODEL.md) — trust boundary, assumptions, in-scope risks, known gaps.
+- [`SECURITY.md`](SECURITY.md) — vulnerability disclosure process.
+- [`DECISIONS.md`](DECISIONS.md) — why the kit makes the choices it does.
+
 ## What it sets up
 
 - A `claude-agent.service` systemd unit under `~/.config/systemd/user/`.
@@ -42,7 +49,33 @@ The installer walks you through two interactive prompts:
 - **`claude auth login`** — opens a web flow (or device code) to authenticate this user with your Claude account. Skipped if already logged in.
 - **`claude remote-control`** consent — first time on an account, Claude asks "Enable Remote Control? (y/n)" and "spawn mode [1/2]". Answer `y` then `1`, then Ctrl-C to exit. Consent persists — subsequent runs (including the systemd launch) skip these prompts.
 
-After those, the installer writes the unit and brings the service up.
+After those, the installer writes the unit, drops a runtime safety
+`CLAUDE.md` at `$HOME` (skipped if you already have one — see Safety
+below), and brings the service up.
+
+## Safety
+
+The installer ships a `CLAUDE.md.template` and writes it to `$HOME/CLAUDE.md`
+on first run. The agent reads `$HOME/CLAUDE.md` on every session start;
+the template adds **hard rules** denying destructive operations on:
+
+- `~/.ssh/**` — deleting `authorized_keys` locks SSH out.
+- `/usr/local/bin/claude*`, `/usr/bin/claude*`, `~/.local/bin/claude*`
+  — the CLI binary.
+- `~/.claude/auth.json`, `~/.claude/settings.json`, `~/.claude/keychain*`
+  — auth and settings the agent needs to start.
+- `/etc/systemd/system/claude-agent.service`,
+  `~/.config/systemd/user/claude-agent.service` — the unit.
+
+This is a runtime guard against the failure mode that bricked one of
+our VPSes when an agent was asked to "tidy up" the disk. The denylist is
+advisory to the agent (read every session, enforced by the agent's
+behaviour). Defence-in-depth via `~/.claude/settings.json`'s `permissions.deny`
+list is the recommended next layer — already populated by the host's
+default settings on this kit's reference deployment.
+
+If you already have a `$HOME/CLAUDE.md`, the installer leaves it alone
+and reminds you to merge in the rules from `CLAUDE.md.template`.
 
 ## Copying the kit to a new VPS
 
@@ -129,6 +162,20 @@ sudo loginctl disable-linger "$USER"
 - **"Enable Remote Control? (y/n)" in the journal** — the interactive consent wasn't completed. Rerun `./install.sh` and answer the prompt when it comes up, or run `claude remote-control --name <NAME> --permission-mode bypassPermissions` manually and answer `y`.
 
 - **"Remote Control eligibility"** — your Claude plan may not include Remote Control. Check plan, or fall back to running plain `claude` inside tmux/screen as an alternative persistence pattern.
+
+## Sunset criteria
+
+Archive this kit if any of these become true:
+
+- Anthropic ships a first-party "remote-control as a service" deployment
+  story that covers the same gotchas (auth, workspace trust, linger,
+  unattended boot).
+- Claude Code drops the `remote-control` subcommand or replaces the
+  systemd-friendly invocation pattern in a way that can't be patched
+  with a one-line install.sh change.
+- The threat model becomes untenable for the configurations users
+  actually run (e.g. multi-tenant becomes the default, requiring a
+  rewrite rather than a kit update).
 
 ## Manual three-file install (paste into new VPS)
 
