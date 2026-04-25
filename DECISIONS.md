@@ -23,11 +23,12 @@ it by deleting `$HOME/.git`.
 
 ## 2026-04-25 — Ship a default `CLAUDE.md` with destructive-action denylist
 
-A "tidy up" command on a Fasthosts VPS bricked the box by deleting
-`~/.ssh/` and the claude binary on 2026-04-24. The runtime guard
-against this is a `CLAUDE.md` at `$HOME` that the agent reads on every
-session, with explicit hard rules against modifying paths the agent
-depends on for its own survival. `install.sh` writes this file on first
+A "tidy up" or "free disk" request can have the agent delete paths it
+depends on for its own survival — `~/.ssh/authorized_keys`, the claude
+binary, the systemd unit, the auth blob — leaving the box reachable
+only via the provider's console. The runtime guard is a `CLAUDE.md` at
+`$HOME` that the agent reads on every session, with explicit hard rules
+against modifying those paths. `install.sh` writes this file on first
 run; if a file already exists at `$HOME/CLAUDE.md`, the installer
 preserves it and prints a reminder of the recommended rules.
 

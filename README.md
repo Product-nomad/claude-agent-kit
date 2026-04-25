@@ -41,7 +41,7 @@ cd ~/claude-agent-kit
 Optional: override the session name (defaults to the box's short hostname):
 
 ```sh
-CLAUDE_SESSION_NAME=fasthosts ./install.sh
+CLAUDE_SESSION_NAME=my-vps ./install.sh
 ```
 
 The installer walks you through two interactive prompts:
@@ -67,12 +67,12 @@ the template adds **hard rules** denying destructive operations on:
 - `/etc/systemd/system/claude-agent.service`,
   `~/.config/systemd/user/claude-agent.service` — the unit.
 
-This is a runtime guard against the failure mode that bricked one of
-our VPSes when an agent was asked to "tidy up" the disk. The denylist is
-advisory to the agent (read every session, enforced by the agent's
-behaviour). Defence-in-depth via `~/.claude/settings.json`'s `permissions.deny`
-list is the recommended next layer — already populated by the host's
-default settings on this kit's reference deployment.
+This is a runtime guard against a common failure mode: a "tidy up" or
+"free disk" request that has the agent delete paths it depends on for
+its own survival. The denylist is advisory to the agent (read every
+session, enforced by the agent's behaviour). Defence-in-depth via
+`~/.claude/settings.json`'s `permissions.deny` list is the recommended
+next layer.
 
 If you already have a `$HOME/CLAUDE.md`, the installer leaves it alone
 and reminds you to merge in the rules from `CLAUDE.md.template`.

@@ -10,7 +10,7 @@ setup on a fresh Ubuntu VPS.
 - Repo published at `git@github.com:Product-nomad/claude-agent-kit.git`.
 - `install.sh` and `claude-agent.service.template` use the CLI 2.1.119+
   subcommand form. Verified on this host (2026-04-25).
-- Tested on a Fasthosts VPS on 2026-04-24 — kit installed and ran there.
+- Tested on a fresh Ubuntu 24.04 VPS on 2026-04-24 — kit installed and ran cleanly.
 - (2026-04-25) Conformed to `~/WAYS_OF_WORKING.md`:
   - `THREAT_MODEL.md`, `SECURITY.md`, `DECISIONS.md`, `CHANGELOG.md` added.
   - README declares CPMAI phase and links the new docs.

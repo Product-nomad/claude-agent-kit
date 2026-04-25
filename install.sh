@@ -136,7 +136,8 @@ echo "✓ Wrote $UNIT_FILE"
 # ── 6b. Install the runtime safety CLAUDE.md ─────────────────────────────
 # Hard rules denying destructive ops on ~/.ssh, the claude binary, and the
 # systemd unit. The agent reads $HOME/CLAUDE.md on every session start.
-# Prevents the "tidy up bricked my VPS" failure mode (see DECISIONS.md).
+# Prevents the agent from deleting paths it depends on for its own
+# survival during cleanup operations (see DECISIONS.md).
 TEMPLATE_CLAUDE_MD="$(dirname "$(readlink -f "$0")")/CLAUDE.md.template"
 HOME_CLAUDE_MD="$HOME/CLAUDE.md"
 if [[ -e "$HOME_CLAUDE_MD" ]]; then

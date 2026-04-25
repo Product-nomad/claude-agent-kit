@@ -35,8 +35,9 @@ When asked to "clean up" / "tidy" / "free disk space":
 
 ## Why this file exists
 
-A previous box was bricked on 2026-04-24 by a "tidy up" command that
-deleted `~/.ssh/` and the claude binary, severing both SSH and the
-remote-control channel. Recovery required provider console access. This
-file is the runtime guard against repeating that. Edit freely — but if
-you weaken the rules above, do it on purpose.
+A "tidy up" or "free disk" request can easily delete the paths an agent
+depends on for its own survival — `~/.ssh/`, the claude binary, the
+systemd unit, the auth blob — leaving the box reachable only via the
+provider's web/serial console. This file is the runtime guard against
+that failure mode. Edit freely, but if you weaken the rules above, do
+it on purpose.
