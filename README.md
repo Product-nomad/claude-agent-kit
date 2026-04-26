@@ -16,6 +16,54 @@ Tested against Claude Code **2.1.119+** (subcommand-style CLI). Handles every go
 - [`THREAT_MODEL.md`](THREAT_MODEL.md) — trust boundary, assumptions, in-scope risks, known gaps.
 - [`SECURITY.md`](SECURITY.md) — vulnerability disclosure process.
 - [`DECISIONS.md`](DECISIONS.md) — why the kit makes the choices it does.
+- [`INCIDENTS/`](INCIDENTS/) — post-mortems and upstream issues (Apr 2026 workspace-trust blocker).
+
+## How it works
+
+The kit ships **two install paths** for the same underlying problem ("persistent `claude` on a remote VPS"). They differ in *how you reach the agent* — and on CLI 2.1.119+ only the second one currently works end-to-end.
+
+```mermaid
+flowchart LR
+    User([You])
+
+    subgraph laptop["Your laptop / phone"]
+        Web["claude.ai/code<br/>(web app)"]
+        SSH["SSH terminal"]
+    end
+
+    subgraph vps["Linux VPS (non-root user, linger enabled)"]
+        subgraph systemd["systemd --user"]
+            UnitA["claude-agent.service<br/>install.sh"]
+            UnitB["claude-agent-tmux.service<br/>install-tmux.sh"]
+        end
+        Trust{{"workspace<br/>trust gate"}}
+        Claude1["claude remote-control<br/>--name VPS"]
+        Tmux["tmux session 'claude'"]
+        Claude2["claude<br/>(interactive)"]
+        UnitA -->|launches| Trust
+        Trust -->|"git init $HOME"<br/>was sufficient<br/>pre-2.1.119| Claude1
+        UnitB -->|launches| Tmux
+        Tmux --> Claude2
+    end
+
+    Anthropic[("api.anthropic.com")]
+    Claude1 -.-> Anthropic
+    Claude2 -.-> Anthropic
+
+    User --> Web
+    User --> SSH
+    Web -->|"device list"| Claude1
+    SSH -->|"tmux attach -t claude"| Tmux
+
+    classDef broken stroke:#c00,stroke-width:2px,stroke-dasharray:5 5
+    classDef ok stroke:#080,stroke-width:2px
+    class Trust,Claude1 broken
+    class Tmux,Claude2 ok
+```
+
+**Red dashed = currently broken on CLI 2.1.119+.** The `git init $HOME` workaround is no longer reliably sufficient for the workspace-trust gate under the systemd unit — see [anthropics/claude-code#53606](https://github.com/anthropics/claude-code/issues/53606). Until upstream lands an unattended-trust path, the supervised path can't reach `claude.ai/code`.
+
+**Green = currently working on CLI 2.1.119+.** The tmux fallback runs `claude` interactively inside a `tmux` session that survives SSH logout and reboot. You attach over SSH, not via the web app.
 
 ## What it sets up
 
