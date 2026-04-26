@@ -6,7 +6,7 @@ Install Claude Code as a **systemd user service** on a Linux VPS. Survives SSH l
 >
 > The kit's promised UX — unattended `claude remote-control` reachable via `claude.ai/code` — does **not** work on a fresh deployment with current CLI versions. After the flag-form fix described in `CHANGELOG.md`, the **workspace-trust gate** still blocks the systemd unit from completing boot, and the `git init $HOME` workaround documented in `DECISIONS.md` is no longer sufficient. A Fasthosts deployment on 2026-04-24 reproduced this; the tmux fallback below is the working alternative until upstream ships an unattended-trust path.
 >
-> If you want a persistent `claude` you can SSH into (terminal, not web), see [Tmux fallback](#tmux-fallback). If you want the `claude.ai/code` web UX specifically, the answer today is "wait for an Anthropic fix" — track upstream and re-test when CLI changes land.
+> If you want a persistent `claude` you can SSH into (terminal, not web), see [Tmux fallback](#tmux-fallback) — `./install-tmux.sh` packages it. If you want the `claude.ai/code` web UX specifically, the answer today is "wait for an Anthropic fix" — see [`INCIDENTS/2026-04-24-workspace-trust.md`](INCIDENTS/2026-04-24-workspace-trust.md) for the ready-to-paste issue text and track upstream from there.
 
 Tested against Claude Code **2.1.119+** (subcommand-style CLI). Handles every gotcha we hit deploying this in production — see the comments in `install.sh` for the full reasoning.
 
@@ -195,15 +195,47 @@ When the workspace-trust blocker (or any other `claude.ai/code`-specific failure
 | Available today on CLI 2.1.119 | Yes | **No** — workspace-trust gate blocks it |
 | Appears in the `claude.ai/code` device list | No | Yes |
 
-Minimal setup:
+### Install (packaged)
+
+The kit ships an installer for this fallback path:
 
 ```sh
-sudo apt-get install -y tmux            # if not already present
-tmux new -s claude -d 'claude'          # detached session running claude
-ssh -t user@box tmux attach -t claude   # attach from another box
+cd ~/claude-agent-kit
+./install-tmux.sh
 ```
 
-A systemd-unit version that auto-restarts the tmux session on boot is on the roadmap; for now, `tmux new -s claude -d 'claude'` from a session with `loginctl enable-linger` set is enough.
+What it does:
+
+1. Refuses to run as root (same constraint as the supervised path).
+2. Installs `tmux` via `apt` if not already present.
+3. Enables `loginctl` linger so the unit starts at boot.
+4. Walks you through `claude auth login` and one interactive `claude` launch (so any first-run trust prompt is cleared while a human is at the keyboard).
+5. Drops a `claude-agent-tmux.service` user unit at `~/.config/systemd/user/` and starts it.
+
+Override the tmux session name with `CLAUDE_SESSION_NAME=foo ./install-tmux.sh` (defaults to `claude`).
+
+After it succeeds:
+
+```sh
+# Locally on the box:
+tmux attach -t claude
+
+# From another box / your laptop:
+ssh -t user@box tmux attach -t claude
+
+# Detach: Ctrl-b then d. Session keeps running.
+```
+
+### Manual setup (if you don't want to run the script)
+
+```sh
+sudo apt-get install -y tmux                    # if not already present
+loginctl enable-linger "$USER"                  # survive logout
+tmux new -s claude -d 'claude --permission-mode bypassPermissions'
+ssh -t user@box tmux attach -t claude           # attach from another box
+```
+
+This gives you the same persistent session but without the systemd unit, so it won't auto-recover after `tmux kill-session` or a reboot.
 
 ## Sunset criteria
 

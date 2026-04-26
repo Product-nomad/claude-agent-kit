@@ -19,9 +19,19 @@ All notable user-visible changes. Format: [Keep a Changelog](https://keepachange
   Tmux fallback for SSH-only persistence.
 
 ### Added
-- **Tmux fallback section in README.** Long-lived `claude` running
-  inside `tmux`, reachable via `ssh -t box tmux attach`. Different UX
-  (terminal, not web), but it's the working alternative today.
+- **`install-tmux.sh` + `claude-agent-tmux.service.template`.** One-shot
+  installer for the tmux fallback path: long-lived `claude` running
+  inside a `tmux` session under a `systemd --user` unit, reachable via
+  `ssh -t box tmux attach`. Same root-refusal, linger, and auth
+  hand-shake as the supervised installer; auto-installs `tmux` via apt
+  if missing. Different UX (terminal, not web), but it's the working
+  alternative on CLI 2.1.119+ until upstream fixes the trust gate.
+- **`INCIDENTS/2026-04-24-workspace-trust.md`.** Self-contained,
+  ready-to-paste GitHub issue describing the workspace-trust blocker.
+  Linked from the README "Known issue" banner so visitors can
+  contribute to the upstream fix.
+- **Tmux fallback section in README** with side-by-side comparison of
+  the two paths and packaged-install instructions.
 
 ### Documentation
 - README "Troubleshooting" expanded with three failure modes seen in

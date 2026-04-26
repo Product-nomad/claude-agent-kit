@@ -34,10 +34,10 @@ setup on a fresh Ubuntu VPS.
   `install.sh` already prints the detected version on success — when
   re-testing, use that as the version-of-record for any new
   bug-report attachments.
-- **Tmux-based fallback unit.** Ship a sibling systemd unit that
-  runs `claude` under tmux with `loginctl enable-linger`, so users
-  who only need SSH-reachable persistence (not the web UX) have a
-  one-shot install. Currently documented but not packaged.
+- **Tmux-based fallback unit.** ✅ Shipped 2026-04-26 as
+  `claude-agent-tmux.service.template` + `install-tmux.sh`. One-shot
+  install gives users SSH-reachable persistence on CLI versions where
+  the supervised path is blocked.
 
 ## What's next (deferred — Phase V gate, unblocked once upstream resolves)
 - **Automated test suite.** Bats or shellspec smoke tests for: root-refusal,
@@ -113,3 +113,8 @@ Mitigations now in tree:
 - `CLAUDE.md.template` — runtime safety doc dropped at `$HOME` on install.
 - `THREAT_MODEL.md`, `SECURITY.md`, `DECISIONS.md`, `CHANGELOG.md` —
   governance artefacts per `WAYS_OF_WORKING.md`.
+- `install-tmux.sh` + `claude-agent-tmux.service.template` — fallback
+  install path for SSH-only persistence (does not require workspace
+  trust).
+- `INCIDENTS/2026-04-24-workspace-trust.md` — ready-to-paste GitHub
+  issue describing the upstream blocker. Awaiting submission.

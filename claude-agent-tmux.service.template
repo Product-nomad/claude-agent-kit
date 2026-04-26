@@ -1,0 +1,16 @@
+[Unit]
+Description=Claude Code (persistent tmux session, '__SESSION_NAME__')
+After=default.target
+
+[Service]
+# tmux self-daemonises on `new-session -d`, so the unit starts the session,
+# the tmux server forks off, and we mark the unit as RemainAfterExit so
+# systemd doesn't think a backgrounded tmux is a crashed process.
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=__TMUX_BIN__ new-session -d -s __SESSION_NAME__ '__CLAUDE_BIN__ --permission-mode bypassPermissions'
+ExecStop=__TMUX_BIN__ kill-session -t __SESSION_NAME__
+Environment=PATH=__HOME__/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+[Install]
+WantedBy=default.target
