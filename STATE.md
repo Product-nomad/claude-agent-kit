@@ -25,11 +25,12 @@ setup on a fresh Ubuntu VPS.
     `^[A-Za-z0-9_.-]{1,64}$` before sed-substituting it into the unit.
 
 ## What's next (blocked on upstream)
-- **File the workspace-trust issue with Anthropic.** The kit needs a
-  documented unattended-trust path (e.g. `--trust-workspace`,
-  `CLAUDE_TRUST_WORKSPACE=1`, or a `settings.json` key that opts the
-  unit's `WorkingDirectory` into trust on first launch). Without
-  that, the kit's headline UX is unreachable.
+- **Workspace-trust issue filed:** [anthropics/claude-code#53606](https://github.com/anthropics/claude-code/issues/53606)
+  (2026-04-26). Subscribe for upstream movement; re-test the
+  supervised path when any of the requested unblock options land
+  (`--trust-workspace` flag, `CLAUDE_TRUST_WORKSPACE=1` env var,
+  `workspaceTrust.allowedPaths` settings key, or documented
+  trust-state file).
 - **Re-test on every CLI release** until upstream lands a fix.
   `install.sh` already prints the detected version on success — when
   re-testing, use that as the version-of-record for any new
@@ -116,5 +117,5 @@ Mitigations now in tree:
 - `install-tmux.sh` + `claude-agent-tmux.service.template` — fallback
   install path for SSH-only persistence (does not require workspace
   trust).
-- `INCIDENTS/2026-04-24-workspace-trust.md` — ready-to-paste GitHub
-  issue describing the upstream blocker. Awaiting submission.
+- `INCIDENTS/2026-04-24-workspace-trust.md` — incident write-up.
+  Filed upstream as [anthropics/claude-code#53606](https://github.com/anthropics/claude-code/issues/53606).

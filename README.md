@@ -6,7 +6,7 @@ Install Claude Code as a **systemd user service** on a Linux VPS. Survives SSH l
 >
 > The kit's promised UX — unattended `claude remote-control` reachable via `claude.ai/code` — does **not** work on a fresh deployment with current CLI versions. After the flag-form fix described in `CHANGELOG.md`, the **workspace-trust gate** still blocks the systemd unit from completing boot, and the `git init $HOME` workaround documented in `DECISIONS.md` is no longer sufficient. A Fasthosts deployment on 2026-04-24 reproduced this; the tmux fallback below is the working alternative until upstream ships an unattended-trust path.
 >
-> If you want a persistent `claude` you can SSH into (terminal, not web), see [Tmux fallback](#tmux-fallback) — `./install-tmux.sh` packages it. If you want the `claude.ai/code` web UX specifically, the answer today is "wait for an Anthropic fix" — see [`INCIDENTS/2026-04-24-workspace-trust.md`](INCIDENTS/2026-04-24-workspace-trust.md) for the ready-to-paste issue text and track upstream from there.
+> If you want a persistent `claude` you can SSH into (terminal, not web), see [Tmux fallback](#tmux-fallback) — `./install-tmux.sh` packages it. If you want the `claude.ai/code` web UX specifically, the answer today is "wait for an Anthropic fix" — track [anthropics/claude-code#53606](https://github.com/anthropics/claude-code/issues/53606) and re-test when an unattended-trust path lands. Full reproduction in [`INCIDENTS/2026-04-24-workspace-trust.md`](INCIDENTS/2026-04-24-workspace-trust.md).
 
 Tested against Claude Code **2.1.119+** (subcommand-style CLI). Handles every gotcha we hit deploying this in production — see the comments in `install.sh` for the full reasoning.
 

@@ -26,10 +26,11 @@ All notable user-visible changes. Format: [Keep a Changelog](https://keepachange
   hand-shake as the supervised installer; auto-installs `tmux` via apt
   if missing. Different UX (terminal, not web), but it's the working
   alternative on CLI 2.1.119+ until upstream fixes the trust gate.
-- **`INCIDENTS/2026-04-24-workspace-trust.md`.** Self-contained,
-  ready-to-paste GitHub issue describing the workspace-trust blocker.
-  Linked from the README "Known issue" banner so visitors can
-  contribute to the upstream fix.
+- **`INCIDENTS/2026-04-24-workspace-trust.md`.** Self-contained
+  incident write-up describing the workspace-trust blocker. Filed
+  upstream on 2026-04-26 as [anthropics/claude-code#53606](https://github.com/anthropics/claude-code/issues/53606)
+  and linked from the README "Known issue" banner so visitors can
+  subscribe.
 - **Tmux fallback section in README** with side-by-side comparison of
   the two paths and packaged-install instructions.
 
