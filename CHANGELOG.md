@@ -61,7 +61,7 @@ All notable user-visible changes. Format: [Keep a Changelog](https://keepachange
   known gaps. Required by `WAYS_OF_WORKING.md` §3.
 - `SECURITY.md` — vulnerability disclosure process.
 - `DECISIONS.md` — material architectural decisions.
-- README declares its CPMAI phase per `WAYS_OF_WORKING.md` §9.
+- README declares its current delivery phase per `WAYS_OF_WORKING.md` §9.
 - `install.sh` validates `CLAUDE_SESSION_NAME` against a strict regex
   before substituting it into the systemd unit (`THREAT_MODEL.md` row).
 - `install.sh` writes `$HOME/CLAUDE.md` from the template on first run

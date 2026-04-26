@@ -2,7 +2,7 @@
 
 **Goal**: One-shot installer to replicate this VPC's Claude Code remote-control
 setup on a fresh Ubuntu VPS.
-**CPMAI phase**: IV — Model Development, **paused at the workspace-trust blocker** (see Lessons learned + DECISIONS.md 2026-04-26 entries).
+**Phase**: Build → Validate, **paused at the workspace-trust blocker** (see Lessons learned + DECISIONS.md 2026-04-26 entries).
 **Status**: kit installs cleanly but cannot deliver `claude.ai/code` remote-control unattended on CLI 2.1.119 because workspace trust is not auto-granted under the systemd unit even with the `git init $HOME` workaround. Tmux fallback works for SSH-only persistence. Awaiting upstream fix.
 **Last touched**: 2026-04-26.
 
@@ -17,7 +17,7 @@ setup on a fresh Ubuntu VPS.
   `CHANGELOG.md` and `DECISIONS.md`.
 - (2026-04-25) Conformed to `~/WAYS_OF_WORKING.md`:
   - `THREAT_MODEL.md`, `SECURITY.md`, `DECISIONS.md`, `CHANGELOG.md` added.
-  - README declares CPMAI phase and links the new docs.
+  - README declares its current delivery phase and links the new docs.
   - `CLAUDE.md.template` ships hard-rule denylist for `~/.ssh`, the claude
     binary, the systemd unit, and `~/.claude/` credentials. `install.sh`
     drops it at `$HOME/CLAUDE.md` on first run.

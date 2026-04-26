@@ -10,7 +10,7 @@ Install Claude Code as a **systemd user service** on a Linux VPS. Survives SSH l
 
 Tested against Claude Code **2.1.119+** (subcommand-style CLI). Handles every gotcha we hit deploying this in production — see the comments in `install.sh` for the full reasoning.
 
-> **CPMAI phase:** IV — Model Development, **paused at the workspace-trust blocker**. The install path is implemented and tested manually on Ubuntu 22.04 + 24.04 VPSes; the kit installs cleanly but the running service can't pass workspace trust unattended on CLI 2.1.119. Phase V gates (automated test suite, golden-set bootstrap test) deferred until the upstream blocker resolves; tracked in `STATE.md`.
+> **Phase: Build → Validate, paused at the workspace-trust blocker.** The install path is implemented and tested manually on Ubuntu 22.04 + 24.04 VPSes; the kit installs cleanly but the running service can't pass workspace trust unattended on CLI 2.1.119. Validation gates (automated test suite, golden-set bootstrap test) deferred until the upstream blocker resolves; tracked in `STATE.md`.
 
 **Read these before installing on a real box:**
 - [`THREAT_MODEL.md`](THREAT_MODEL.md) — trust boundary, assumptions, in-scope risks, known gaps.

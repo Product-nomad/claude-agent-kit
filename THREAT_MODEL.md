@@ -1,7 +1,6 @@
 # claude-agent-kit — Threat Model
 
-CPMAI phase: **I — Business Understanding** (this document is one of the
-gate artefacts).
+Phase: **Frame** (this document is one of the gate artefacts).
 
 ## Scope
 
