@@ -149,6 +149,20 @@ sudo loginctl disable-linger "$USER"
 
 ## Troubleshooting
 
+- **Service is in a restart loop (`Restart counter is at NN`, NN climbing)** — almost always means the unit's `ExecStart` is calling the CLI with a removed flag. The classic symptom from the 2026-04-24 incident is:
+  ```
+  Error: Input must be provided either through stdin or as a prompt argument when using --print
+  claude-agent.service: Failed with result 'exit-code'
+  claude-agent.service: Scheduled restart job, restart counter is at 53.
+  ```
+  Verify your unit's `ExecStart` matches the v2.1.119+ subcommand form:
+  ```
+  ExecStart=/usr/local/bin/claude remote-control --name <NAME> --permission-mode bypassPermissions
+  ```
+  The pre-v2.1.119 form `claude --remote-control <name> --persist` was removed (sessions persist by default; `--persist` no longer exists). Re-run `./install.sh` to refresh the unit if you're on an older clone of the kit. Confirm the running CLI version with `claude --version` — must be **2.1.119 or newer**.
+
+- **`Address already in use` / unit fails to start, but no port is involved** — a manually-launched `claude remote-control --name <NAME>` may already hold the session name. Find it with `pgrep -af "remote-control.*<NAME>"` and either kill it or stop the conflicting unit, then `systemctl --user start claude-agent`.
+
 - **"Failed to connect to bus: No medium found"** when running `systemctl --user` after `su -` — the session doesn't have a dbus. Fix:
   ```sh
   export XDG_RUNTIME_DIR=/run/user/$(id -u)

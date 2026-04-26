@@ -47,3 +47,36 @@ Multi-tenant adds complexity (privilege escalation, shared service
 contention) that the kit isn't trying to address. Assumption stated in
 `THREAT_MODEL.md`. Multi-user-aware deployment is a follow-on
 project, not a fix to this one.
+
+## 2026-04-26 — Pin to CLI v2.1.119+ subcommand form; do not support legacy
+
+Claude Code 2.1.119 promoted `remote-control` to a subcommand and
+removed `--persist` (sessions persist by default). The pre-v2.1.119
+invocation `claude --remote-control <name> --persist` is silently
+incompatible: systemd starts the unit, the binary errors with
+"Input must be provided ... when using --print", and the auto-restart
+loop ratchets up indefinitely because the failure looks transient.
+A kit deployment to a Fasthosts VPS on 2026-04-24 hit this exact
+failure and accumulated 18,000+ restarts before the user noticed,
+disconnecting the agent for ~2 hours. The kit now emits the
+subcommand form only and documents the symptoms in README. We
+deliberately do *not* try to detect-and-rewrite the legacy form: the
+syntactic divergence is broad (subcommand promotion, removed flag,
+changed arity), the user population on <2.1.119 is small and
+shrinking, and the fix on the user's side is one upgrade. `install.sh`
+prints the detected Claude Code version on success so a future
+regression in flag layout is visible at deploy time rather than at
+the next restart-loop incident.
+
+## 2026-04-26 — Manual three-file install path is load-bearing
+
+The Apr 24 incident also exposed friction in the `scp`-from-laptop
+deployment pattern: a two-hop copy
+(source host → user's laptop → target VPS) lost the directory
+structure on one attempt, leaving the user with
+`cd: claude-agent-kit: No such file or directory` and no install. The
+README's "Manual three-file install" section (paste-the-file blocks)
+is preserved as a fallback for anyone whose target VPS lacks `scp`,
+`rsync`, or working outbound SSH from the kit's source host. Treat
+that section as a support contract, not optional polish — keep it
+in sync with `install.sh`.

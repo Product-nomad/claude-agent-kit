@@ -4,13 +4,17 @@
 setup on a fresh Ubuntu VPS.
 **CPMAI phase**: IV — Model Development (advancing to V).
 **Status**: active, manually tested.
-**Last touched**: 2026-04-25.
+**Last touched**: 2026-04-26.
 
 ## What's done
 - Repo published at `git@github.com:Product-nomad/claude-agent-kit.git`.
 - `install.sh` and `claude-agent.service.template` use the CLI 2.1.119+
   subcommand form. Verified on this host (2026-04-25).
-- Tested on a fresh Ubuntu 24.04 VPS on 2026-04-24 — kit installed and ran cleanly.
+- Tested on a fresh Ubuntu 24.04 VPS on 2026-04-24. Initial install used
+  the pre-v2.1.119 flag form and entered an 18,000+ restart loop —
+  subsequent fix to the subcommand form is what now ships. See the
+  `Lessons learned` section below and the 2026-04-26 entries in
+  `CHANGELOG.md` and `DECISIONS.md`.
 - (2026-04-25) Conformed to `~/WAYS_OF_WORKING.md`:
   - `THREAT_MODEL.md`, `SECURITY.md`, `DECISIONS.md`, `CHANGELOG.md` added.
   - README declares CPMAI phase and links the new docs.
@@ -37,6 +41,36 @@ setup on a fresh Ubuntu VPS.
 - Where to run the containerised test? GitHub Actions runners are fine
   for the install-in-Docker path. Confirm `loginctl enable-linger`
   works inside the runner's container model.
+
+## Lessons learned (post-2026-04-24 incident)
+
+The kit's unattended supervisor approach has exactly two failure modes
+that bit us in the field:
+
+1. **Silent CLI flag breakage.** When the underlying CLI changes flag
+   layout (as v2.1.119 did with `remote-control` → subcommand and
+   removal of `--persist`), systemd starts the unit, the binary
+   refuses input with `Error: Input must be provided ... when using
+   --print`, and the auto-restart loop ratchets indefinitely because
+   the failure looks transient. The user only notices when the agent
+   stops responding from their Mac — by which point thousands of
+   restarts have happened.
+2. **Multi-hop `scp` losing structure.** Copying via the user's laptop
+   (source-host → laptop → target VPS) lost the `claude-agent-kit/`
+   directory in one Apr 24 attempt, leaving the user with `cd: No
+   such file or directory`. The "Manual three-file install" section
+   in README is the documented fallback.
+
+Mitigations now in tree:
+- README "Troubleshooting" calls out the restart-loop symptom plus the
+  exact `journalctl` line to look for, and the live-process-holds-
+  the-name conflict.
+- `DECISIONS.md` (2026-04-26) records the pin to the subcommand form
+  and why we don't try to support the legacy invocation, plus the
+  manual-install path's load-bearing status.
+- `install.sh` already prints the detected Claude Code version on
+  success — a future flag-layout regression should be visible at
+  deploy time, not at the next restart-loop incident.
 
 ## Key files
 - `install.sh` — main installer.
