@@ -4,15 +4,38 @@ All notable user-visible changes. Format: [Keep a Changelog](https://keepachange
 
 ## [Unreleased] — 2026-04-26
 
+### Known issue (kit currently broken on CLI 2.1.119)
+- **Workspace-trust gate blocks unattended boot.** The `git init $HOME`
+  workaround documented in `DECISIONS.md` (2026-04-23) is no longer
+  reliably sufficient under the systemd unit on Claude Code 2.1.119:
+  the unit installs cleanly and the binary launches, but workspace
+  trust is not granted unattended, so `claude remote-control` never
+  reaches the `claude.ai/code` device list. This is the actual blocker
+  exposed by the Apr 24 Fasthosts deployment — the v2.1.119 flag-form
+  fix below was a prerequisite, not the final fix. Until upstream
+  ships an unattended-trust path, the kit's promised UX
+  (`claude.ai/code` web app remote-control) cannot be delivered on a
+  fresh install. README now leads with this and points users at the
+  Tmux fallback for SSH-only persistence.
+
+### Added
+- **Tmux fallback section in README.** Long-lived `claude` running
+  inside `tmux`, reachable via `ssh -t box tmux attach`. Different UX
+  (terminal, not web), but it's the working alternative today.
+
 ### Documentation
-- README "Troubleshooting" expanded with two failure modes seen in the
-  field: the v2.1.119 restart-loop symptom (and exactly which
-  `journalctl` line to look for), and the live-process-already-holds-
-  the-name conflict on `systemctl start`.
-- `DECISIONS.md` records the post-mortem decision to pin to the
+- README "Troubleshooting" expanded with three failure modes seen in
+  the field: the v2.1.119 restart-loop symptom (and exactly which
+  `journalctl` line to look for), the live-process-already-holds-the-
+  name conflict on `systemctl start`, and the workspace-trust
+  regression on first boot under the systemd unit.
+- `DECISIONS.md` records (a) the post-mortem decision to pin to the
   v2.1.119+ subcommand form and not try to support the legacy
-  `--remote-control <name> --persist` invocation.
-- `STATE.md` notes the lessons learned.
+  `--remote-control <name> --persist` invocation, and (b) the
+  manual three-file install path's load-bearing status.
+- `STATE.md` corrected — the kit is **paused at the workspace-trust
+  blocker**, not "active, manually tested" — and adds a Lessons
+  learned section linking the doc updates.
 
 ## [Unreleased] — 2026-04-25
 

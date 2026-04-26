@@ -2,9 +2,15 @@
 
 Install Claude Code as a **systemd user service** on a Linux VPS. Survives SSH logout, terminal close, and reboot. Attach from anywhere via <https://claude.ai/code> or the Claude app.
 
+> ## ⚠ Known issue (2026-04-26): broken on Claude Code 2.1.119
+>
+> The kit's promised UX — unattended `claude remote-control` reachable via `claude.ai/code` — does **not** work on a fresh deployment with current CLI versions. After the flag-form fix described in `CHANGELOG.md`, the **workspace-trust gate** still blocks the systemd unit from completing boot, and the `git init $HOME` workaround documented in `DECISIONS.md` is no longer sufficient. A Fasthosts deployment on 2026-04-24 reproduced this; the tmux fallback below is the working alternative until upstream ships an unattended-trust path.
+>
+> If you want a persistent `claude` you can SSH into (terminal, not web), see [Tmux fallback](#tmux-fallback). If you want the `claude.ai/code` web UX specifically, the answer today is "wait for an Anthropic fix" — track upstream and re-test when CLI changes land.
+
 Tested against Claude Code **2.1.119+** (subcommand-style CLI). Handles every gotcha we hit deploying this in production — see the comments in `install.sh` for the full reasoning.
 
-> **CPMAI phase:** IV — Model Development. The install path is implemented and tested manually on Ubuntu 22.04 + 24.04 VPSes. Phase V gates (automated test suite, golden-set bootstrap test) are outstanding; tracked in `STATE.md`.
+> **CPMAI phase:** IV — Model Development, **paused at the workspace-trust blocker**. The install path is implemented and tested manually on Ubuntu 22.04 + 24.04 VPSes; the kit installs cleanly but the running service can't pass workspace trust unattended on CLI 2.1.119. Phase V gates (automated test suite, golden-set bootstrap test) deferred until the upstream blocker resolves; tracked in `STATE.md`.
 
 **Read these before installing on a real box:**
 - [`THREAT_MODEL.md`](THREAT_MODEL.md) — trust boundary, assumptions, in-scope risks, known gaps.
@@ -169,13 +175,35 @@ sudo loginctl disable-linger "$USER"
   ```
   Or always switch users with `machinectl shell user@` instead of `su -`.
 
-- **"Workspace not trusted"** in the journal — the installer runs `git init` in `$HOME`, which should prevent it. If you see this anyway, check whether `$HOME/.git` exists and whether Claude's runtime user matches the unit's `WorkingDirectory`.
+- **"Workspace not trusted"** in the journal — the installer runs `git init` in `$HOME`, which historically auto-trusted the directory. **As of CLI 2.1.119, this is no longer reliably sufficient on first run** under the systemd unit (see the Known Issue at the top of this README). Verify `$HOME/.git` exists and that Claude's runtime user matches the unit's `WorkingDirectory`. If the dialog still blocks, you've hit the upstream blocker — the **Tmux fallback** below is the working alternative for now.
 
 - **"cannot be used with root/sudo privileges"** — you're running as root. Create a non-root user (see Prerequisites).
 
 - **"Enable Remote Control? (y/n)" in the journal** — the interactive consent wasn't completed. Rerun `./install.sh` and answer the prompt when it comes up, or run `claude remote-control --name <NAME> --permission-mode bypassPermissions` manually and answer `y`.
 
-- **"Remote Control eligibility"** — your Claude plan may not include Remote Control. Check plan, or fall back to running plain `claude` inside tmux/screen as an alternative persistence pattern.
+- **"Remote Control eligibility"** — your Claude plan may not include Remote Control. Check plan, or fall back to running plain `claude` inside tmux/screen as an alternative persistence pattern (see [Tmux fallback](#tmux-fallback)).
+
+## Tmux fallback
+
+When the workspace-trust blocker (or any other `claude.ai/code`-specific failure) makes the supervised `remote-control` path unusable, you can still get a **persistent `claude` session reachable over SSH** by running it inside `tmux` as a long-lived user service. This is *not* the same product — you reach it via `ssh box -t tmux attach`, not via `claude.ai/code` — but it survives SSH disconnect and reboot, which is the underlying ask in most cases.
+
+| Feature | tmux + claude (this fallback) | claude-agent-kit (the supervised path) |
+|---|---|---|
+| How you reach it | `ssh box -t tmux attach` (terminal) | `claude.ai/code` web app or mobile |
+| Multi-device | One terminal at a time | Yes (browser on any device) |
+| Survives box reboot (with the systemd unit) | Yes | Yes (when the trust gate clears) |
+| Available today on CLI 2.1.119 | Yes | **No** — workspace-trust gate blocks it |
+| Appears in the `claude.ai/code` device list | No | Yes |
+
+Minimal setup:
+
+```sh
+sudo apt-get install -y tmux            # if not already present
+tmux new -s claude -d 'claude'          # detached session running claude
+ssh -t user@box tmux attach -t claude   # attach from another box
+```
+
+A systemd-unit version that auto-restarts the tmux session on boot is on the roadmap; for now, `tmux new -s claude -d 'claude'` from a session with `loginctl enable-linger` set is enough.
 
 ## Sunset criteria
 

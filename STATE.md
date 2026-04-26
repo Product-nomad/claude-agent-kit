@@ -2,8 +2,8 @@
 
 **Goal**: One-shot installer to replicate this VPC's Claude Code remote-control
 setup on a fresh Ubuntu VPS.
-**CPMAI phase**: IV — Model Development (advancing to V).
-**Status**: active, manually tested.
+**CPMAI phase**: IV — Model Development, **paused at the workspace-trust blocker** (see Lessons learned + DECISIONS.md 2026-04-26 entries).
+**Status**: kit installs cleanly but cannot deliver `claude.ai/code` remote-control unattended on CLI 2.1.119 because workspace trust is not auto-granted under the systemd unit even with the `git init $HOME` workaround. Tmux fallback works for SSH-only persistence. Awaiting upstream fix.
 **Last touched**: 2026-04-26.
 
 ## What's done
@@ -24,7 +24,22 @@ setup on a fresh Ubuntu VPS.
   - `install.sh` validates `CLAUDE_SESSION_NAME` against
     `^[A-Za-z0-9_.-]{1,64}$` before sed-substituting it into the unit.
 
-## What's next (Phase V gate)
+## What's next (blocked on upstream)
+- **File the workspace-trust issue with Anthropic.** The kit needs a
+  documented unattended-trust path (e.g. `--trust-workspace`,
+  `CLAUDE_TRUST_WORKSPACE=1`, or a `settings.json` key that opts the
+  unit's `WorkingDirectory` into trust on first launch). Without
+  that, the kit's headline UX is unreachable.
+- **Re-test on every CLI release** until upstream lands a fix.
+  `install.sh` already prints the detected version on success — when
+  re-testing, use that as the version-of-record for any new
+  bug-report attachments.
+- **Tmux-based fallback unit.** Ship a sibling systemd unit that
+  runs `claude` under tmux with `loginctl enable-linger`, so users
+  who only need SSH-reachable persistence (not the web UX) have a
+  one-shot install. Currently documented but not packaged.
+
+## What's next (deferred — Phase V gate, unblocked once upstream resolves)
 - **Automated test suite.** Bats or shellspec smoke tests for: root-refusal,
   SESSION_NAME validation, idempotent rerun, CLAUDE.md preservation when
   one already exists. Real install path needs a containerised harness.
@@ -44,33 +59,53 @@ setup on a fresh Ubuntu VPS.
 
 ## Lessons learned (post-2026-04-24 incident)
 
-The kit's unattended supervisor approach has exactly two failure modes
-that bit us in the field:
+Three failure modes bit us in the field, in order of severity:
 
-1. **Silent CLI flag breakage.** When the underlying CLI changes flag
-   layout (as v2.1.119 did with `remote-control` → subcommand and
-   removal of `--persist`), systemd starts the unit, the binary
-   refuses input with `Error: Input must be provided ... when using
-   --print`, and the auto-restart loop ratchets indefinitely because
-   the failure looks transient. The user only notices when the agent
-   stops responding from their Mac — by which point thousands of
-   restarts have happened.
-2. **Multi-hop `scp` losing structure.** Copying via the user's laptop
-   (source-host → laptop → target VPS) lost the `claude-agent-kit/`
-   directory in one Apr 24 attempt, leaving the user with `cd: No
-   such file or directory`. The "Manual three-file install" section
-   in README is the documented fallback.
+1. **(Currently blocking) Workspace-trust regression on CLI 2.1.119.**
+   The 2026-04-23 `git init $HOME` workaround stopped being reliably
+   sufficient: under the systemd unit, the trust prompt fires on
+   first launch even though `$HOME/.git` exists, so `claude
+   remote-control` never reaches the `claude.ai/code` device list.
+   This is the *real* reason the Apr 24 deployment failed; the flag
+   fix below was a prerequisite, not the final fix. Mitigation: kit
+   marked broken-in-this-mode in README and STATE; tmux fallback
+   documented; awaiting upstream fix.
+2. **Silent CLI flag breakage (v2.1.119, fixed in tree).** When the
+   underlying CLI changes flag layout (as v2.1.119 did with
+   `remote-control` → subcommand and removal of `--persist`),
+   systemd starts the unit, the binary refuses input with
+   `Error: Input must be provided ... when using --print`, and the
+   auto-restart loop ratchets indefinitely because the failure looks
+   transient. The Apr 24 incident hit 18,000+ restarts before the
+   user noticed. `install.sh` and `claude-agent.service.template`
+   now emit the subcommand form and `install.sh` prints the
+   detected CLI version on success.
+3. **Multi-hop `scp` losing structure.** Copying via the user's
+   laptop (source-host → laptop → target VPS) lost the
+   `claude-agent-kit/` directory in one Apr 24 attempt, leaving the
+   user with `cd: No such file or directory`. The "Manual
+   three-file install" section in README is the documented
+   fallback.
 
 Mitigations now in tree:
-- README "Troubleshooting" calls out the restart-loop symptom plus the
-  exact `journalctl` line to look for, and the live-process-holds-
-  the-name conflict.
-- `DECISIONS.md` (2026-04-26) records the pin to the subcommand form
-  and why we don't try to support the legacy invocation, plus the
-  manual-install path's load-bearing status.
-- `install.sh` already prints the detected Claude Code version on
-  success — a future flag-layout regression should be visible at
-  deploy time, not at the next restart-loop incident.
+- README leads with the workspace-trust **Known issue** banner so
+  users don't waste an hour on a kit that can't deliver its
+  headline UX today.
+- README "Troubleshooting" covers the restart-loop symptom (with
+  the exact `journalctl` line to look for), the
+  live-process-holds-the-name conflict, and the workspace-trust
+  regression.
+- README "Tmux fallback" documents the working alternative for
+  users whose real ask is "persistent claude on a remote box, not
+  the `claude.ai/code` web UX specifically".
+- `DECISIONS.md` (2026-04-26) records: the pin to the v2.1.119+
+  subcommand form; the workspace-trust workaround being no longer
+  sufficient and the decision to wait for upstream; the tmux
+  fallback as a documented support contract; the manual-install
+  path's load-bearing status.
+- `install.sh` prints the detected Claude Code version on success
+  — a future flag-layout regression should be visible at deploy
+  time, not at the next restart-loop incident.
 
 ## Key files
 - `install.sh` — main installer.

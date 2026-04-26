@@ -68,6 +68,48 @@ prints the detected Claude Code version on success so a future
 regression in flag layout is visible at deploy time rather than at
 the next restart-loop incident.
 
+## 2026-04-26 — `git init $HOME` is no longer sufficient for workspace trust
+
+The 2026-04-23 entry above documents `git init $HOME` as the cheap
+workaround for Claude Code's workspace-trust dialog, which otherwise
+blocks unattended systemd boot. As of the 2026-04-24 Fasthosts
+deployment, this workaround is **no longer reliably effective** on
+CLI 2.1.119: the directory is auto-recognised as a git repo, but
+the trust prompt fires anyway on first run under the unit. The kit
+installs cleanly, the binary launches, but `remote-control` never
+reaches the `claude.ai/code` device list because trust never clears.
+
+We are not going to ship a more invasive workaround — pre-seeding
+the trust state file would couple the kit to undocumented internals
+of Claude Code that the upstream may rename or restructure at any
+time. The decision is to **wait for upstream to ship a documented
+unattended-trust path**, mark the kit as broken-in-this-mode in
+README and STATE, and provide the tmux fallback for users whose
+real ask is "persistent claude on a remote box" rather than
+"`claude.ai/code` web UX specifically".
+
+When upstream lands a fix (e.g. `--trust-workspace`,
+`CLAUDE_TRUST_WORKSPACE=1`, or a settings.json key that opts the
+unit user into trust on its `WorkingDirectory`), revisit. Until
+then: kit is paused.
+
+## 2026-04-26 — Tmux fallback as a documented support contract
+
+Users who reach for this kit usually want one of two things, and
+the kit conflates them:
+
+1. *A persistent `claude` they can SSH back into across reboots* —
+   solvable today with `tmux` + `loginctl enable-linger`.
+2. *Their VPS appearing in the `claude.ai/code` device list,
+   reachable from the web app and the phone* — currently blocked
+   upstream as documented above.
+
+The tmux fallback in README is the answer for (1) when (2) is
+unavailable. It's not a "lesser version" of the kit — it's a
+different product with a different reach surface (SSH terminal,
+not web). The README explicitly contrasts the two so users don't
+expect the wrong one.
+
 ## 2026-04-26 — Manual three-file install path is load-bearing
 
 The Apr 24 incident also exposed friction in the `scp`-from-laptop
